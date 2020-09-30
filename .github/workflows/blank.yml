@@ -4,16 +4,44 @@ name: CI
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
-
-on: 
+on:
+  issue_comment:
+    types: [created, deleted, edited]
   schedule:
-    - cron: '* * * * *'
+    - cron: '* * */4 * *'
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  test-and-upload-results:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
     runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: 'Upload screenshots and videos to Slack'
-        uses: trymbill/cypress-slack-video-upload-action@v1.0.0
+      - name: Screenshot Website
+        uses: swinton/screenshot-website@v1.x
         with:
-          token: 'd11943e967efb7764b047255befac6f0
-          channels: 'general'
+          source: https://cn.tradingview.com/script/Z80gO0Ny/
+          destination: screenshot.png
+          scale-factor: 3
+          width: 2560
+          height: 1440
+          element: '.chart-markup-table'
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: screenshot
+          
+      - name: Upload to slack step
+        uses: adrey/slack-file-upload-action@master
+        with:
+          token: ${{ secrets.SLACK_TOKEN }}
+          path: screenshot.png
+          channel: general
+
+      # Runs a set of commands using the runners shell
+      - name: Run a multi-line script
+        run: |
+          echo Add other actions to build,
+          echo test, and deploy your project.
